@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Crud.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crud.Controllers;
 
@@ -7,39 +8,24 @@ namespace Crud.Controllers;
 [ApiController]
 
 public class TeamsController : ControllerBase{
-    private static List<Team> teams = new List<Team>(){
-        new Team() {
-             Country = "Ethiopia",
-             id = 1,
-             Name = "city",
-             TeamPrinciple = "toto rolf"
-        },
-        new Team(){
-            
-             Country = "Germany",
-             id = 2,
-             Name = "united",
-             TeamPrinciple = "tata"
-        },
-        new Team(){
-            
-             Country = "usa",
-             id = 3,
-             Name = "arsenal",
-             TeamPrinciple = "nan"
-        }
-    };
-  
+    private static AppDbContext _context;
+
+    public TeamsController(AppDbContext context){
+        _context = context;
+    }
+    
     [HttpGet]
-    public IActionResult Get(){
+    public async Task<IActionResult> Get(){
+        var teams = await _context.Teams.ToListAsync();
         return Ok(teams);
     }
 
     [HttpGet("{id:int}")]
 
-    public IActionResult Get(int id){
+    public async Task<IActionResult> Get(int id){
+       
 
-       var team = teams.FirstOrDefault(x => x.id == id);
+       var team = await _context.Teams.FirstOrDefaultAsync(x => x.id == id);
 
        if (team  == null){
         return BadRequest("team is not found");
@@ -49,36 +35,41 @@ public class TeamsController : ControllerBase{
 
     [HttpPost]
 
-    public IActionResult Post(Team team){
-        teams.Add(team);
+    public async Task<IActionResult> Post(Team team){
+        await _context.Teams.AddAsync(team);
+
+        await _context.SaveChangesAsync();
 
         return CreatedAtAction("Get", routeValues:team.id, value:team);
     }
 
     [HttpPatch]
 
-    public IActionResult Patch(int id, string country){
-       var team = teams.FirstOrDefault(x => x.id == id);
+    public async Task<IActionResult> Patch(int id, string country){
+       var team = await _context.Teams.FirstOrDefaultAsync(x => x.id == id);
 
        if (team == null){
         return BadRequest("team is not found");
        }
 
        team.Country = country;
+       await _context.SaveChangesAsync();
+
 
        return NoContent();
     }
 
     [HttpDelete]
 
-    public IActionResult Delete(int id){
-        var team = teams.FirstOrDefault(x => x.id == id);
+    public async Task<IActionResult> Delete(int id){
+        var team = await _context.Teams.FirstOrDefaultAsync(x => x.id == id);
 
         if (team== null){
             return BadRequest("team is not found");
 
         }
-        teams.Remove(team);
+        _context.Teams.Remove(team);
+        await _context.SaveChangesAsync();
         
         return NoContent();
     }
